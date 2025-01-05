@@ -1,0 +1,39 @@
+name: "Build"
+description: "Build the Python project"
+outputs:
+  hash:
+    description: "The hash of the build dist"
+    value: ${{ steps.hash.outputs.hash }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version: '3.x'
+        cache: pip
+        cache-dependency-path: requirements*/*.txt
+
+    - run: pip install -r requirements/build.txt
+      shell: bash
+
+    - run: echo "source_date=$(git log -1 --pretty=%ct)" >> $GITHUB_OUTPUT
+      id: source_date
+      shell: bash
+
+    # Use the commit date instead of the current date during the build.
+    - run: python -m build
+      shell: bash
+      env:
+        SOURCE_DATE_EPOCH: ${{ steps.date.outputs.source_date }}
+
+    # Generate hashes used for provenance.
+    - name: generate hash
+      id: hash
+      run: cd dist && echo "hash=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      with:
+        path: ./dist

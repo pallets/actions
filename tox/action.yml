@@ -6,9 +6,6 @@ inputs:
     description: "The tox environment to invoke"
   python-version:
     description: "The Python version to use"
-  working-directory:
-    default: "."
-    description: "The working directory"
 runs:
   using: composite
   steps:
